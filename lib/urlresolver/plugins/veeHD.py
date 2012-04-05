@@ -125,5 +125,4 @@ class veeHDResolver(Plugin, UrlResolver, SiteAuth, PluginSettings):
         
     #to indicate if this is a universal resolver
     def isUniversal(self):
-        
         return True
