@@ -41,15 +41,12 @@ class MovpodResolver(Plugin, UrlResolver, PluginSettings):
 
     def get_media_url(self, host, media_id):
         web_url = self.get_url(host, media_id)
-        #print web_url
         
         """ Human Verification """
         try:
             resp = self.net.http_GET(web_url)
             html = resp.content
             post_url = resp.get_url()
-            #print post_url
-
 
             form_values = {}
             for i in re.finditer('<input type="hidden" name="(.+?)" value="(.+?)">', html):
@@ -62,10 +59,8 @@ class MovpodResolver(Plugin, UrlResolver, PluginSettings):
                                   (e.code, web_url))
             return False
 
-        
         r = re.search('file:"(.+?)"', html)
-        if r:
-            return r.group(1)+'.flv'
+        if r: return r.group(1)+'.flv'
 
         return False
 

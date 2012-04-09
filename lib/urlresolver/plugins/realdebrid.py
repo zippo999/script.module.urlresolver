@@ -51,7 +51,7 @@ class RealDebridResolver(Plugin, UrlResolver, SiteAuth, PluginSettings):
 
     #UrlResolver methods
     def get_media_url(self, host, media_id):
-        print 'in get_media_url %s : %s' % (host, media_id)
+        common.addon.log_debug('in get_media_url %s : %s' % (host, media_id))
         dialog = xbmcgui.Dialog()
 
         try:
@@ -63,7 +63,7 @@ class RealDebridResolver(Plugin, UrlResolver, SiteAuth, PluginSettings):
             print(exc_type, fname, exc_tb.tb_lineno)
             dialog.ok(' Real-Debrid ', ' Real-Debrid server timed out ', '', '')
             return False
-        print '************* %s' % source
+        common.addon.log_debug('************* %s' % source)
         
         if re.search('Upgrade your account now to generate a link', source):
             dialog.ok(' Real-Debrid ', ' Upgrade your account now to generate a link ', '', '')
@@ -82,7 +82,7 @@ class RealDebridResolver(Plugin, UrlResolver, SiteAuth, PluginSettings):
         if len(link) == 0:
             return False
         
-        print 'link is %s' % link[0]
+        common.addon.log_debug('link is %s' % link[0])
         self.media_url = link[0]
 
         # avoid servers as configured in the settings to get better playback of your video on XBMC
@@ -126,7 +126,6 @@ class RealDebridResolver(Plugin, UrlResolver, SiteAuth, PluginSettings):
 
         if self.get_setting('login') == 'false':
             return False
-        print 'in valid_url %s : %s' % (url, host)
         tmp = re.compile('//(.+?)/').findall(url)
         domain = ''
         if len(tmp) > 0 :
@@ -135,7 +134,6 @@ class RealDebridResolver(Plugin, UrlResolver, SiteAuth, PluginSettings):
                 domain = 'megashares.com'
             elif 'megashare' in domain:
                 domain = 'megashare.com'
-            print 'domain is %s ' % domain
         if (domain in self.get_all_hosters()) or (len(host) > 0 and host in self.get_all_hosters()):
             return True
         else:
@@ -147,19 +145,18 @@ class RealDebridResolver(Plugin, UrlResolver, SiteAuth, PluginSettings):
                return True
         self.net.set_cookies(self.cookie_file)
         source =  self.net.http_GET(url).content
-        print source
         if re.search('expiration', source):
-            print 'checkLogin returning False'
+            common.addon.log_debug('checkLogin returning False')
             return False
         else:
-            print 'checkLogin returning True'
+            common.addon.log_debug('checkLogin returning True')
             return True
     
     #SiteAuth methods
     def login(self):
         if self.checkLogin():
             try:
-                print 'Need to login since session is invalid'
+                common.addon.log_debug('Need to login since session is invalid')
                 login_data = urllib.urlencode({'user' : self.get_setting('username'), 'pass' : self.get_setting('password')})
                 url = 'https://real-debrid.com/ajax/login.php?' + login_data
                 source = self.net.http_GET(url).content
@@ -168,13 +165,11 @@ class RealDebridResolver(Plugin, UrlResolver, SiteAuth, PluginSettings):
                     self.net.set_cookies(self.cookie_file)
                     return True
             except:
-                    print 'error with http_GET'
+                    common.addon.log_debug('error with http_GET')
                     dialog = xbmcgui.Dialog()
                     dialog.ok(' Real-Debrid ', ' Unexpected error, Please try again.', '', '')            
-            else:
-                return False
-        else:
-            return True
+            else: return False
+        else: return True
 
     #PluginSettings methods
     def get_settings_xml(self):
@@ -193,5 +188,4 @@ class RealDebridResolver(Plugin, UrlResolver, SiteAuth, PluginSettings):
         
     #to indicate if this is a universal resolver
     def isUniversal(self):
-        
         return True
