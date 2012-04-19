@@ -4,8 +4,8 @@
 	     version="1.0.0" 
 	     provider-name="t0mm0 (inspired by unbehagan, anarchintosh)">
   <requires>
-    <import addon="xbmc.python" version="1.0" />
-    <import addon="script.module.t0mm0.common" version="0.0.1"/>
+    <import addon="xbmc.python" version="2.0" />
+    <import addon="script.module.t0mm0.common" version="1.0.0"/>
     <import addon="plugin.video.youtube"/>
   </requires>
   <extension point="xbmc.python.module" library="lib" />
