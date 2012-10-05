@@ -61,7 +61,7 @@ class EcostreamResolver(Plugin, UrlResolver, PluginSettings):
                 sKey = str(aEntry[3])
 
                 # send vars and retrieve stream url
-                sNextUrl = 'http://www.ecostream.tv/objec.php?s='+sS+'&k='+sK+'&t='+sT+'&key='+sKey
+                sNextUrl = 'http://www.ecostream.tv/lc/m.php?s='+sS+'&k='+sK+'&t='+sT+'&key='+sKey
                 postParams = ({'s':sS,'k':sK,'t':sT,'key':sKey})
                 postHeader = ({'Referer':'http://www.ecostream.tv', 'X-Requested-With':'XMLHttpRequest'})
                 try:
@@ -74,7 +74,7 @@ class EcostreamResolver(Plugin, UrlResolver, PluginSettings):
                 sPattern = '<param name="flashvars" value="file=(.*?)&'
                 r = re.search(sPattern, html)
                 if r:
-                    sLinkToFile = r.group(1)
+                    sLinkToFile = 'http://www.ecostream.tv'+r.group(1)
                     return sLinkToFile
 
 
