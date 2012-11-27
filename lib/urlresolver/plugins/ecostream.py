@@ -61,7 +61,7 @@ class EcostreamResolver(Plugin, UrlResolver, PluginSettings):
                 sKey = str(aEntry[3])
 
                 # send vars and retrieve stream url
-                sNextUrl = 'http://www.ecostream.tv/lc/ma.php?s='+sS+'&k='+sK+'&t='+sT+'&key='+sKey
+                sNextUrl = 'http://www.ecostream.tv/lc/mo.php?s='+sS+'&k='+sK+'&t='+sT+'&key='+sKey
                 postParams = ({'s':sS,'k':sK,'t':sT,'key':sKey})
                 postHeader = ({'Referer':'http://www.ecostream.tv', 'X-Requested-With':'XMLHttpRequest'})
                 try:
