@@ -16,30 +16,16 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import re
+import os    
+from t0mm0.common.addon import Addon
+import xbmc
+import xbmcaddon
+import xbmcgui
+import xbmcplugin
 
-def unpack(sJavascript):
-    aSplit = sJavascript.split(";',")
-    p = str(aSplit[0])
-    aSplit = aSplit[1].split(",")
-    a = int(aSplit[0])
-    c = int(aSplit[1])
-    k = aSplit[2].split(".")[0].replace("'", '').split('|')
-    e = ''
-    d = ''
-    sUnpacked = str(__unpack(p, a, c, k, e, d))
-    return sUnpacked.replace('\\', '')
+addon = Addon('script.module.urlresolver')
+addon_path = addon.get_path()
+plugins_path = os.path.join(addon_path, 'lib', 'urlresolver', 'plugins')
+profile_path = addon.get_profile()
+settings_file = os.path.join(addon_path, 'resources', 'settings.xml')
 
-def __unpack(p, a, c, k, e, d):
-    while (c > 1):
-        c = c -1
-        if (k[c]):
-            p = re.sub('\\b' + str(__itoa(c, a)) +'\\b', k[c], p)
-    return p
-
-def __itoa(num, radix):
-    result = ""
-    while num > 0:
-        result = "0123456789abcdefghijklmnopqrstuvwxyz"[num % radix] + result
-        num /= radix
-    return result
