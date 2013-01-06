@@ -59,9 +59,20 @@ class EcostreamResolver(Plugin, UrlResolver, PluginSettings):
                 sK = str(aEntry[1])
                 sT = str(aEntry[2])
                 sKey = str(aEntry[3])
-
+                # get name of php file
+                try:
+                    html = self.net.http_GET('http://www.ecostream.tv/assets/js/common.js').content
+                except urllib2.URLError, e:
+                    common.addon.log_error(self.name + ': got http error %d fetching %s' %
+                                    (e.code, web_url))
+                    return False
+                sPattern = '4/(.*?)\.8\?s='
+                r = re.search(sPattern, html)
+                if r is None :
+                    common.addon.log_error(self.name + ': name of php file not found')
+                    return False
                 # send vars and retrieve stream url
-                sNextUrl = 'http://www.ecostream.tv/lc/mo.php?s='+sS+'&k='+sK+'&t='+sT+'&key='+sKey
+                sNextUrl = 'http://www.ecostream.tv/lc/'+r.group(1)+'.php?s='+sS+'&k='+sK+'&t='+sT+'&key='+sKey
                 postParams = ({'s':sS,'k':sK,'t':sT,'key':sKey})
                 postHeader = ({'Referer':'http://www.ecostream.tv', 'X-Requested-With':'XMLHttpRequest'})
                 try:
