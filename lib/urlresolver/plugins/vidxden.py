@@ -23,7 +23,7 @@ vidxden hosts both avi and flv videos
 In testing there seems to be a timing issue with files coming up as not playable.
 This happens on both the addon and in a browser.
 """
-import urllib2,urllib,xbmcaddon,socket,re,xbmc,os,xbmcgui
+import urllib2,urllib,xbmcaddon,socket,re,xbmc,os,xbmcgui,time
 from t0mm0.common.net import Net
 from urlresolver import common
 from urlresolver.plugnplay.interfaces import UrlResolver
@@ -34,19 +34,25 @@ from urlresolver.plugnplay import Plugin
 socket.setdefaulttimeout(30)
 
 #SET DIRECTORIES 
-local=xbmcaddon.Addon(id='script.module.urlresolver')
+addon=xbmcaddon.Addon(id='script.module.urlresolver')
 logo='http://googlechromesupportnow.com/wp-content/uploads/2012/06/Installation-103-error-in-Chrome.png'
-img="%s/resources/puzzle.png"%local.getAddonInfo('path')
+img="%s/resources/puzzle.png"%addon.getAddonInfo('path')
 
 class InputWindow(xbmcgui.WindowDialog):# Cheers to Bastardsmkr code already done in Putlocker PRO resolver.
+    
     def __init__(self, *args, **kwargs):
         self.cptloc = kwargs.get('captcha')
-        self.img = xbmcgui.ControlImage(335,30,624,180,self.cptloc)
+        xposition = int(float(addon.getSetting('vidxden_captchax')))
+        yposition = int(float(addon.getSetting('vidxden_captchay')))
+        hposition = int(float(addon.getSetting('vidxden_captchah')))
+        wposition = int(float(addon.getSetting('vidxden_captchaw')))
+        self.img = xbmcgui.ControlImage(xposition,yposition,wposition,hposition,self.cptloc)
         self.addControl(self.img)
         self.kbd = xbmc.Keyboard()
 
     def get(self):
         self.show()
+        time.sleep(3)        
         self.kbd.doModal()
         if (self.kbd.isConfirmed()):
             text = self.kbd.getText()
@@ -87,7 +93,8 @@ class VidxdenResolver(Plugin, UrlResolver, PluginSettings):
                 if puzzle:
                     data={'adcopy_response':urllib.quote_plus(puzzle),'adcopy_challenge':hugekey,'op':'download1','method_free':'1','usr_login':'','id':media_id,'fname':filename}
                     html = self.net.http_POST(resp.get_url(),data).content
-            except:
+            except Exception, e:
+                print e
                 xbmc.executebuiltin('XBMC.Notification([B][COLOR white]VIDXDEN[/COLOR][/B],[COLOR red]No such file or the file has been removed due to copyright infringement issues[/COLOR],2500,'+logo+')')
                 pass
         except urllib2.URLError, e:
@@ -95,7 +102,7 @@ class VidxdenResolver(Plugin, UrlResolver, PluginSettings):
                                   (e.code, web_url))
             return False
        
-        #find packed javascript embed code     
+        #find packed javascript embed code
         r = re.search('return p}\(\'(.+?);\',\d+,\d+,\'(.+?)\'\.split',html)
         if r:
             p, k = r.groups()
@@ -133,12 +140,25 @@ class VidxdenResolver(Plugin, UrlResolver, PluginSettings):
 
 
     def valid_url(self, url, host):
+        if self.get_setting('enabled') == 'false': return False
         return (re.match('http://(?:www.)?(vidxden|divxden|vidbux).com/' +
                          '(embed-)?[0-9a-z]+', url) or
                 'vidxden' in host or 'divxden' in host or
                 'vidbux' in host)
 
-        
+    #PluginSettings methods
+    def get_settings_xml(self):
+        xml = PluginSettings.get_settings_xml(self)
+        xml += '<setting id="vidxden_captchax" '
+        xml += 'type="slider" label="Captcha Image X Position" range="0,500" default="335" option="int" />\n'
+        xml += '<setting id="vidxden_captchay" '
+        xml += 'type="slider" label="Captcha Image Y Position" range="0,500" default="30" option="int" />\n'
+        xml += '<setting id="vidxden_captchah" '
+        xml += 'type="slider" label="Captcha Image Height" range="0,500" default="180" option="int" />\n'
+        xml += '<setting id="vidxden_captchaw" '
+        xml += 'type="slider" label="Captcha Image Width" range="0,1000" default="624" option="int" />\n'
+        return xml
+
 def unpack_js(p, k):
     '''emulate js unpacking code'''
     k = k.split('|')

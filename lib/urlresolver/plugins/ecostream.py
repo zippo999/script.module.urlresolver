@@ -66,13 +66,13 @@ class EcostreamResolver(Plugin, UrlResolver, PluginSettings):
                     common.addon.log_error(self.name + ': got http error %d fetching %s' %
                                     (e.code, web_url))
                     return False
-                sPattern = '4/(.*?)\.8\?s='
+                sPattern = "url: '([^=]+)="
                 r = re.search(sPattern, html)
                 if r is None :
                     common.addon.log_error(self.name + ': name of php file not found')
                     return False
                 # send vars and retrieve stream url
-                sNextUrl = 'http://www.ecostream.tv/lc/'+r.group(1)+'.php?s='+sS+'&k='+sK+'&t='+sT+'&key='+sKey
+                sNextUrl = r.group(1)+'='+sS+'&k='+sK+'&t='+sT+'&key='+sKey
                 postParams = ({'s':sS,'k':sK,'t':sT,'key':sKey})
                 postHeader = ({'Referer':'http://www.ecostream.tv', 'X-Requested-With':'XMLHttpRequest'})
                 try:
@@ -104,4 +104,5 @@ class EcostreamResolver(Plugin, UrlResolver, PluginSettings):
 
 
     def valid_url(self, url, host):
+        if self.get_setting('enabled') == 'false': return False
         return re.match(self.pattern, url) or self.name in host

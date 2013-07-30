@@ -16,13 +16,15 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import re
+import re, urllib2, os
 from t0mm0.common.net import Net
-import urllib2
 from urlresolver import common
 from urlresolver.plugnplay.interfaces import UrlResolver
 from urlresolver.plugnplay.interfaces import PluginSettings
 from urlresolver.plugnplay import Plugin
+
+#SET ERROR_LOGO# THANKS TO VOINAGE, BSTRDMKR, ELDORADO
+error_logo = os.path.join(common.addon_path, 'resources', 'images', 'redx.png')
 
 class NovamovResolver(Plugin, UrlResolver, PluginSettings):
     implements = [UrlResolver, PluginSettings]
@@ -38,59 +40,62 @@ class NovamovResolver(Plugin, UrlResolver, PluginSettings):
         #find key
         try:
             html = self.net.http_GET(web_url).content
+            r = re.search('flashvars.file="(.+?)".+?flashvars.filekey="(.+?)"',
+                          html, re.DOTALL)
+            print 'find key: '+str(r)
+            if r:
+                filename, filekey = r.groups()
+                print "FILEBLOBS=%s  %s"%(filename,filekey)
+            else:
+                r = re.search('file no longer exists',html)
+                if r:
+                    raise Exception ('File Not Found or removed')
+
+            
+            #get stream url from api
+            if 'movshare' in host:
+                api = 'http://www.movshare.net/api/player.api.php?key=%s&file=%s' % (filekey, filename)
+            elif 'nowvideo' in host:
+                api = 'http://www.nowvideo.eu/api/player.api.php?key=%s&file=%s' % (filekey, filename)
+            elif 'novamov' in host:
+                api = 'http://www.novamov.com/api/player.api.php?key=%s&file=%s' % (filekey, filename)
+            print api
+            html = self.net.http_GET(api).content
+            r = re.search('url=(.+?)&title', html)
+            if r:
+                stream_url = r.group(1)
+            else:
+                r = re.search('file no longer exists',html)
+                if r:
+                    raise Exception ('File Not Found or removed')
+            
+            return stream_url
         except urllib2.URLError, e:
-            common.addon.log_error('novamov: got http error %d fetching %s' %
+            common.addon.log_error('Novamov: got http error %d fetching %s' %
                                     (e.code, web_url))
             return False
-
-        r = re.search('flashvars.file="(.+?)".+?flashvars.filekey="(.+?)"', 
-                      html, re.DOTALL)
-        if r:
-            filename, filekey = r.groups()
-        else:
-            r = re.search('file no longer exists',html)
-            if r:
-                msg = ['This file no longer exists']
-                common.addon.show_ok_dialog(msg, 'NovaMov', True)
-                msg = 'Host: %s\n ID: %s' % (host,media_id)
-                common.addon.log_error('novamov: filename and filekey not found')
-            else:
-                common.addon.log_error('novamov: filename and filekey not found')
+        except Exception, e:
+            common.addon.log_error('**** Novamov Error occured: %s' % e)
+            common.addon.show_small_popup(title='[B][COLOR white]NOVAMOV[/COLOR][/B]', msg='[COLOR red]%s[/COLOR]' % e, delay=5000, image=error_logo)
             return False
-        
-        #get stream url from api
-        api = 'http://www.novamov.com/api/player.api.php?key=%s&file=%s' % \
-              (filekey, filename)
-        try:
-            html = self.net.http_GET(api).content
-        except urllib2.URLError, e:
-            common.addon.log_error('novamov: got http error %d fetching %s' %
-                                    (e.code, api))
-            return False
-
-        r = re.search('url=(.+?)&title', html)
-        if r:
-            stream_url = r.group(1)
-        else:
-            r = re.search('file no longer exists',html)
-            if r:
-                msg = ['This file no longer exists']
-                common.addon.show_ok_dialog(msg, 'NovaMov', True)
-                msg = 'Host: %s\n ID: %s' % (host,media_id)
-                common.addon.log_error('novamov: filename and filekey not found')
-            else:
-                common.addon.log_error('novamov: filename and filekey not found')
-            return False
-            
-        return stream_url
         
 
     def get_url(self, host, media_id):
-        return 'http://www.novamov.com/video/%s' % media_id
+        if 'movshare' in host:
+            return 'http://www.movshare.net/video/%s' % media_id
+        elif 'nowvideo' in host:
+            return 'http://www.nowvideo.eu/video/%s' % media_id
+        elif 'novamov' in host:
+            return 'http://www.novamov.com/video/%s' % media_id
         
         
     def get_host_and_id(self, url):
-        r = re.search('//(?:embed.)?(.+?)/(?:video/|embed.php\?.+?v=)' + 
+        if 'nowvideo' in url:
+            r = re.search('http://(www.|embed.nowvideo.eu)/(?:video/|embed.php\?v=([0-9a-z]+)&width)', url) 
+        if 'movshare' in url:
+            r = re.search('//(www.movshare.net)/(?:video|embed)/([0-9a-z]+)', url)
+        else:
+            r = re.search('//(?:embed.)?(.+?)/(?:video/|embed.php\?v=)' + 
                       '([0-9a-z]+)', url)
         if r:
             return r.groups()
@@ -99,6 +104,7 @@ class NovamovResolver(Plugin, UrlResolver, PluginSettings):
 
 
     def valid_url(self, url, host):
-        return re.match('http://(www.|embed.)?novamov.com/(video/|embed.php\?)' +
-                        '(?:[0-9a-z]+|width)', url) or 'novamov' in host
+        if self.get_setting('enabled') == 'false': return False
+        return re.match('http://(www.|embed.)?no.+?/(video/|embed.php\?)', url) or 'novamov' in host or re.match('http://(?:www.)?movshare.net/(?:video|embed)/',url) or 'movshare' in host or re.match('http://(www.|embed.)?nowvideo.(?:eu)/(video/|embed.php\?)' +
+                        '(?:[0-9a-z]+|width)', url) or 'nowvideo' in host
 
