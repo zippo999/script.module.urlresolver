@@ -52,7 +52,7 @@ class MightyuploadResolver(Plugin, UrlResolver, PluginSettings):
         r = re.search("<div id=\"player_code\">.*?<script type='text/javascript'>(.*?)</script>",html,re.DOTALL)
         if r:
             js = jsunpack.unpack(r.group(1))
-            r = re.search("'file','([^']+)'", js)
+            r = re.search("'file','([^']+)'", js.replace('\\',''))
             if r:
                 return r.group(1)
         return False
